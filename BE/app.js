@@ -3,10 +3,17 @@ const express = require("express");
 const mysql = require("mysql2");
 const app = express();
 const port = process.env.PORT;
-//const cors = require("cors"); // <-- THÊM DÒNG NÀY
+const cors = require("cors"); // <-- THÊM DÒNG NÀY
 
 app.use(express.json());
-//app.use(cors());
+
+const corsOptions = {
+  origin: "https://testing-deployment-fe.vercel.app", // <--- THAY BẰNG DOMAIN FE CỦA BẠN
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"], // Các phương thức BE hỗ trợ
+  credentials: true, // Cho phép gửi cookies (nếu có)
+  optionsSuccessStatus: 204, // Status code cho pre-flight request
+};
+app.use(cors(corsOptions));
 
 // --- MySQL connection (sử dụng POOL) ---
 const db = mysql.createPool({
