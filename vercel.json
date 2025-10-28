@@ -5,32 +5,14 @@
       "src": "BE/app.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": [
-          "BE/package.json",
-          "BE/node_modules/**"
-        ]
-      }
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "installCommand": "npm install --prefix BE && npm install",
-        "buildCommand": "npm run build",
-        "outputDirectory": "dist"  
+        "includeFiles": ["BE/package.json", "BE/node_modules/**"]
       }
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "BE/app.js"
-    },
-
-    {
       "src": "/(.*)",
-      "dest": "/dist/index.html" 
+      "dest": "BE/app.js"
     }
-  ],
-  "installCommand": "npm install --prefix BE && npm install"
+  ]
 }
