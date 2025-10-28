@@ -20,6 +20,7 @@ const db = mysql.createPool({
   queueLimit: 0,
   ssl: {
     ca: process.env.VERCEL_CA_CERT,
+    rejectUnauthorized: false,
   },
 });
 
