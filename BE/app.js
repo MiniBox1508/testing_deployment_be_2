@@ -7,12 +7,29 @@ const cors = require("cors"); // <-- THÊM DÒNG NÀY
 
 app.use(express.json());
 
+const allowedOrigins = [
+  "https://it-3180-2025-1-se-08.vercel.app", // Link FE 1 của bạn
+  "https://testing-deployment-fe.vercel.app", // Link FE 2
+  "http://localhost:3000", // Thêm các cổng local khác nếu cần
+];
+
 const corsOptions = {
-  origin: "https://testing-deployment-fe.vercel.app", // <--- THAY BẰNG DOMAIN FE CỦA BẠN
-  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"], // Các phương thức BE hỗ trợ
-  credentials: true, // Cho phép gửi cookies (nếu có)
-  optionsSuccessStatus: 200, // Status code cho pre-flight request
+  // 2. Sửa "origin" để dùng mảng
+  origin: function (origin, callback) {
+    // Kiểm tra xem 'origin' (nơi gửi request) có nằm trong danh sách 'allowedOrigins' không
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      // Nếu có (hoặc nếu là request không có origin như Postman), cho phép
+      callback(null, true);
+    } else {
+      // Nếu không, từ chối
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+  credentials: true,
+  optionsSuccessStatus: 200,
 };
+
 app.use(cors(corsOptions));
 
 // --- MySQL connection (sử dụng POOL) ---
