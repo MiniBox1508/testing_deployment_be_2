@@ -502,6 +502,31 @@ app.get("/payments/:id", (req, res) => {
   });
 });
 
+// PATCH: cập nhật trạng thái thanh toán (state) cho payment
+app.patch("/payment/:id", (req, res) => {
+  const { id } = req.params;
+  const { state } = req.body;
+  // Chỉ nhận giá trị 0 hoặc 1 cho state
+  if (typeof state !== "number" || (state !== 0 && state !== 1)) {
+    return res
+      .status(400)
+      .json({ error: "Giá trị state không hợp lệ (chỉ nhận 0 hoặc 1)" });
+  }
+  const sql = `
+    UPDATE payments
+    SET state = ?
+    WHERE id = ?
+  `;
+  db.query(sql, [state, id], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (result.affectedRows === 0)
+      return res
+        .status(404)
+        .json({ error: "Không tìm thấy giao dịch để cập nhật" });
+    res.json({ message: "Cập nhật trạng thái thành công" });
+  });
+});
+
 // -------- PUT /notifications/:id — chỉnh sửa thông báo --------
 app.put("/notifications/:id", (req, res) => {
   const { id } = req.params;
