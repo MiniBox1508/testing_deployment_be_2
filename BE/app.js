@@ -508,11 +508,6 @@ app.get("/payments/:id", (req, res) => {
 });
 
 // PATCH: cập nhật trạng thái thanh toán (state) cho payment
-const dayjs = require("dayjs");
-const utc = require("dayjs/plugin/utc");
-const timezone = require("dayjs/plugin/timezone");
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 app.patch("/payment/:id", (req, res) => {
   const { id } = req.params;
