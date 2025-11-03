@@ -443,7 +443,7 @@ app.delete("/residents/:id", (req, res) => {
 // GET all payments (with resident name)
 app.get("/payments", (req, res) => {
   const sql = `
-    SELECT p.*, r.full_name AS resident_name
+    SELECT p.*, r.full_name AS resident_name, r.apartment_id
     FROM payments p
     LEFT JOIN residents r ON p.resident_id = r.id
     ORDER BY p.created_at DESC
@@ -464,7 +464,7 @@ app.get("/payments", (req, res) => {
 app.get("/payments/by-resident/:resident_id", (req, res) => {
   const { resident_id } = req.params;
   const sql = `
-    SELECT p.*, r.full_name AS resident_name
+    SELECT p.*, r.full_name AS resident_name, r.apartment_id
     FROM payments p
     LEFT JOIN residents r ON p.resident_id = r.id
     WHERE p.resident_id = ?
@@ -485,7 +485,7 @@ app.get("/payments/by-resident/:resident_id", (req, res) => {
 app.get("/payments/:id", (req, res) => {
   const { id } = req.params;
   const sql = `
-    SELECT p.*, r.full_name AS resident_name
+    SELECT p.*, r.full_name AS resident_name, r.apartment_id
     FROM payments p
     LEFT JOIN residents r ON p.resident_id = r.id
     WHERE p.id = ?
