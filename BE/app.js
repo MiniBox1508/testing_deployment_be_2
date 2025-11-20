@@ -664,10 +664,10 @@ app.delete("/payments/:id", (req, res) => {
 app.get("/health", (req, res) => res.json({ ok: true }));
 
 // Start server
-app.listen(port, () => {
-  // console.log(`🚀 Server chạy tại http://localhost:${port}`);
-  console.log(port);
-});
+// app.listen(port, () => {
+//   // console.log(`🚀 Server chạy tại http://localhost:${port}`);
+//   console.log(port);
+// });
 
 // -------- API ĐĂNG NHẬP --------
 app.post("/login", (req, res) => {
