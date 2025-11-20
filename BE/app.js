@@ -514,7 +514,7 @@ app.get("/payments/:id", (req, res) => {
 app.patch("/payments/:id", (req, res) => {
   const { id } = req.params;
   const { state } = req.body;
-  if (typeof state !== "number" || state !== 0 || state !== 1) {
+  if (typeof state !== "number" || (state !== 0 && state !== 1)) {
     return res
       .status(400)
       .json({ error: "Giá trị state không hợp lệ (chỉ nhận 0 hoặc 1)" });
