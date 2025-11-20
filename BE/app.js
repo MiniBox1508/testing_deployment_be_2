@@ -511,50 +511,115 @@ app.get("/payments/:id", (req, res) => {
 
 // PATCH: cập nhật trạng thái thanh toán (state) cho payment
 
+// app.patch("/payments/:id", (req, res) => {
+//   const { id } = req.params;
+//   const { state } = req.body;
+//   if (typeof state !== "number" || (state !== 0 && state !== 1)) {
+//     return res
+//       .status(400)
+//       .json({ error: "Giá trị state không hợp lệ (chỉ nhận 0 hoặc 1)" });
+//   }
+//   if (state === 1) {
+//     // Nếu chuyển sang success, cập nhật cả state và payment_date bằng ngày hiện tại GMT+7
+//     const vnDate = dayjs().tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DD");
+//     const sql = `
+//       UPDATE payments
+//       SET state = 1, payment_date = ?
+//       WHERE id = ?
+//     `;
+//     db.query(sql, [vnDate, id], (err, result) => {
+//       if (err) return res.status(500).json({ error: err.message });
+//       if (result.affectedRows === 0)
+//         return res
+//           .status(404)
+//           .json({ error: "Không tìm thấy giao dịch để cập nhật" });
+//       res.json({
+//         message: "Cập nhật trạng thái và ngày thanh toán thành công",
+//       });
+//     });
+//   } else {
+//     // Nếu là 0, cập nhật state về 0 và xóa ngày thanh toán
+//     const sql = `
+//       UPDATE payments
+//       SET state = 0, payment_date = NULL
+//       WHERE id = ?
+//     `;
+//     db.query(sql, [id], (err, result) => {
+//       if (err) return res.status(500).json({ error: err.message });
+//       if (result.affectedRows === 0)
+//         return res
+//           .status(404)
+//           .json({ error: "Không tìm thấy giao dịch để cập nhật" });
+//       res.json({
+//         message: "Cập nhật trạng thái về chưa thanh toán thành công",
+//       });
+//     });
+//   }
+// });
+
 app.patch("/payments/:id", (req, res) => {
   const { id } = req.params;
-  const { state } = req.body;
-  if (typeof state !== "number" || (state !== 0 && state !== 1)) {
+  const {
+    state, // Dùng cho việc đổi trạng thái (0 hoặc 1)
+    feetype, // Dùng cho AccountPayment
+    amount, // Dùng cho AccountPayment
+    payment_date, // Dùng cho AccountPayment
+  } = req.body;
+
+  const updateFields = [];
+  const updateParams = [];
+
+  // Use case 1: Cập nhật STATE (từ 0 -> 1 hoặc 1 -> 0)
+  if (state !== undefined && (state === 0 || state === 1)) {
+    updateFields.push("state = ?");
+    updateParams.push(state);
+
+    if (state === 1) {
+      // Nếu chuyển sang 1 (Đã thanh toán), tự động set ngày
+      const vnDate = dayjs().tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DD");
+      // Chỉ set ngày nếu nó đang là NULL
+      updateFields.push("payment_date = COALESCE(payment_date, ?)");
+      updateParams.push(vnDate);
+    } else {
+      // Nếu chuyển về 0 (Chưa thanh toán), xóa ngày
+      updateFields.push("payment_date = NULL");
+    }
+  }
+
+  // Use case 2: Cập nhật chi tiết (từ AccountPayment.jsx)
+  // (Chúng ta có thể kiểm tra 'feetype' để biết đây là use case 2)
+  if (feetype !== undefined) {
+    updateFields.push("feetype = ?");
+    updateParams.push(feetype);
+  }
+  if (amount !== undefined) {
+    updateFields.push("amount = ?");
+    updateParams.push(amount);
+  }
+  if (payment_date !== undefined) {
+    // Cho phép FE ghi đè payment_date (kể cả khi là null)
+    updateFields.push("payment_date = ?");
+    updateParams.push(payment_date || null);
+  }
+  // apartment_id KHÔNG được cập nhật ở đây vì nó không thuộc bảng payments.
+
+  if (updateFields.length === 0) {
     return res
       .status(400)
-      .json({ error: "Giá trị state không hợp lệ (chỉ nhận 0 hoặc 1)" });
+      .json({ error: "Không có trường hợp lệ nào để cập nhật." });
   }
-  if (state === 1) {
-    // Nếu chuyển sang success, cập nhật cả state và payment_date bằng ngày hiện tại GMT+7
-    const vnDate = dayjs().tz("Asia/Ho_Chi_Minh").format("YYYY-MM-DD");
-    const sql = `
-      UPDATE payments
-      SET state = 1, payment_date = ?
-      WHERE id = ?
-    `;
-    db.query(sql, [vnDate, id], (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (result.affectedRows === 0)
-        return res
-          .status(404)
-          .json({ error: "Không tìm thấy giao dịch để cập nhật" });
-      res.json({
-        message: "Cập nhật trạng thái và ngày thanh toán thành công",
-      });
-    });
-  } else {
-    // Nếu là 0, cập nhật state về 0 và xóa ngày thanh toán
-    const sql = `
-      UPDATE payments
-      SET state = 0, payment_date = NULL
-      WHERE id = ?
-    `;
-    db.query(sql, [id], (err, result) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (result.affectedRows === 0)
-        return res
-          .status(404)
-          .json({ error: "Không tìm thấy giao dịch để cập nhật" });
-      res.json({
-        message: "Cập nhật trạng thái về chưa thanh toán thành công",
-      });
-    });
-  }
+
+  // Thêm ID vào cuối mảng params
+  updateParams.push(id);
+
+  const sql = `UPDATE payments SET ${updateFields.join(", ")} WHERE id = ?`;
+
+  db.query(sql, updateParams, (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (result.affectedRows === 0)
+      return res.status(404).json({ error: "Không tìm thấy giao dịch" });
+    res.json({ message: "Cập nhật giao dịch thành công" });
+  });
 });
 
 // -------- PUT /notifications/:id — chỉnh sửa thông báo --------
